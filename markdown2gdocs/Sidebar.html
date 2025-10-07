@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+      body {
+        padding: 10px;
+        font-family: Arial, sans-serif;
+        margin: 0;
+      }
+      textarea {
+        width: 100%;
+        height: 300px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        resize: vertical;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .content {
+        flex-grow: 1;
+        overflow-y: auto;
+      }
+      .footer {
+        font-size: 10px;
+        color: #777;
+        text-align: center;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+      }
+      .status-message {
+        padding: 8px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        display: none;
+      }
+      .status-message.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+      .status-message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="content">
+        <p>Paste your Markdown content below and click "Convert".</p>
+        
+        <div id="status-message" class="status-message"></div>
+        
+        <textarea id="markdown-input" placeholder="# My Heading&#10;&#10;This is a paragraph with **bold** and *italic* text.&#10;&#10;- List item 1&#10;- List item 2&#10;&#10;```&#10;code block example&#10;```"></textarea>
+        
+        <button class="action" id="convert-btn">Convert</button>
+      </div>
+      <div class="footer">
+        <p>Markdown to Docs Converter</p>
+      </div>
+    </div>
+
+    <script>
+      window.onload = function() {
+        const markdownInput = document.getElementById('markdown-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const statusMessage = document.getElementById('status-message');
+
+        function showStatus(message, isSuccess) {
+          statusMessage.textContent = message;
+          statusMessage.className = 'status-message ' + (isSuccess ? 'success' : 'error');
+          
+          if (isSuccess) {
+            setTimeout(() => {
+              statusMessage.style.display = 'none';
+            }, 3000);
+          }
+        }
+
+        function hideStatus() {
+          statusMessage.style.display = 'none';
+        }
+
+        convertBtn.addEventListener('click', function() {
+          const markdownText = markdownInput.value.trim();
+          
+          if (!markdownText) {
+            showStatus('Please enter some Markdown content.', false);
+            return;
+          }
+
+          convertBtn.textContent = 'Converting...';
+          convertBtn.disabled = true;
+          hideStatus();
+
+          google.script.run
+            .withSuccessHandler(() => {
+              markdownInput.value = '';
+              convertBtn.textContent = 'Convert';
+              convertBtn.disabled = false;
+              showStatus('Document created successfully!', true);
+            })
+            .withFailureHandler(error => {
+              console.error('Conversion error:', error);
+              showStatus('Conversion failed: ' + (error.message || 'Unknown error'), false);
+              convertBtn.textContent = 'Convert';
+              convertBtn.disabled = false;
+            })
+            .convertMarkdownToDoc(markdownText);
+        });
+      };
+    </script>
+  </body>
+</html>
